@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cartera de Inversión</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0e1a; --bg2:#111827; --bg3:#1a2236; --border:#1e2d45;
+    --accent:#3b82f6; --accent2:#10b981; --accent3:#f59e0b; --red:#ef4444;
+    --text:#e2e8f0; --text2:#94a3b8; --text3:#64748b;
+    --card-glow:0 0 0 1px var(--border),0 4px 24px rgba(0,0,0,0.4);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  .header{background:linear-gradient(135deg,#0a0e1a,#111827,#0f172a);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .header-title{font-family:'DM Serif Display';font-size:20px;} .header-title span{color:var(--accent);}
+  .header-date{font-family:'DM Mono';font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+  .header-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .btn{font-family:'DM Sans';font-size:12px;font-weight:500;padding:7px 14px;border-radius:8px;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary{background:var(--accent);color:#fff;} .btn-primary:hover{background:#2563eb;transform:translateY(-1px);}
+  .btn-success{background:var(--accent2);color:#fff;} .btn-success:hover{background:#059669;transform:translateY(-1px);}
+  .btn-danger{background:var(--red);color:#fff;} .btn-danger:hover{background:#dc2626;}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);} .btn-ghost:hover{background:var(--bg3);color:var(--text);}
+  .btn-sm{padding:5px 9px;font-size:11px;border-radius:6px;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+  .tabs{display:flex;gap:2px;padding:16px 28px 0;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto;}
+  .tab{font-size:13px;font-weight:500;color:var(--text3);padding:9px 18px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;border-radius:6px 6px 0 0;white-space:nowrap;}
+  .tab:hover{color:var(--text2);background:var(--bg3);} .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .main{padding:24px 28px;max-width:1600px;margin:0 auto;}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+  .summary-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px 22px;box-shadow:var(--card-glow);position:relative;overflow:hidden;}
+  .summary-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac,var(--accent));}
+  .summary-card .label{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+  .summary-card .value{font-family:'DM Mono';font-size:24px;font-weight:500;}
+  .summary-card .sub{font-size:11px;color:var(--text2);margin-top:5px;}
+  .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-family:'DM Mono';font-size:11px;font-weight:500;}
+  .badge.pos{background:rgba(16,185,129,0.15);color:var(--accent2);} .badge.neg{background:rgba(239,68,68,0.15);color:var(--red);} .badge.neu{background:rgba(148,163,184,0.1);color:var(--text2);}
+  .section-title{font-family:'DM Serif Display';font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .pill{font-family:'DM Sans';font-size:11px;background:var(--bg3);color:var(--text3);padding:2px 9px;border-radius:20px;font-weight:500;}
+  .table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;box-shadow:var(--card-glow);overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;min-width:820px;}
+  th{font-family:'DM Mono';font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:12px 14px;text-align:right;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap;}
+  th:first-child{text-align:left;}
+  td{padding:12px 14px;font-size:12px;text-align:right;border-bottom:1px solid rgba(30,45,69,0.5);vertical-align:middle;}
+  td:first-child{text-align:left;} tr:last-child td{border-bottom:none;} tr:hover td{background:rgba(59,130,246,0.04);}
+  .fund-name{font-weight:500;font-size:12px;max-width:230px;line-height:1.4;}
+  .fund-meta{font-size:10px;color:var(--text3);margin-top:1px;}
+  .mono{font-family:'DM Mono';font-size:12px;}
+  .pos{color:var(--accent2);} .neg{color:var(--red);} .neu{color:var(--text2);}
+  .actions-cell{display:flex;gap:4px;justify-content:flex-end;}
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+  .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--card-glow);}
+  .chart-card.full{grid-column:1/-1;}
+  .chart-title{font-family:'DM Serif Display';font-size:14px;margin-bottom:16px;}
+  .chart-wrap{position:relative;height:260px;}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:28px;width:100%;max-width:480px;box-shadow:0 24px 80px rgba(0,0,0,0.6);max-height:90vh;overflow-y:auto;}
+  .modal h3{font-family:'DM Serif Display';font-size:19px;margin-bottom:5px;}
+  .modal .msub{font-size:12px;color:var(--text2);margin-bottom:20px;}
+  .fg{margin-bottom:14px;}
+  .fg label{display:block;font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+  .fg input,.fg select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono';font-size:13px;padding:9px 12px;outline:none;transition:border-color 0.2s;}
+  .fg input:focus,.fg select:focus{border-color:var(--accent);}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .mactions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end;}
+  /* Update modal */
+  .upd-panel{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .upd-status{flex:1;min-width:180px;}
+  .upd-status .ust{font-size:13px;font-weight:500;margin-bottom:3px;}
+  .upd-status .usd{font-family:'DM Mono';font-size:10px;color:var(--text3);}
+  .pbar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px;}
+  .pfill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;}
+  .upd-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;padding:9px 11px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);}
+  .upd-name{flex:1;font-size:11px;font-weight:500;color:var(--text2);line-height:1.3;}
+  .upd-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-family:'DM Mono';white-space:nowrap;}
+  .ub-ok{background:rgba(16,185,129,0.15);color:var(--accent2);}
+  .ub-fail{background:rgba(245,158,11,0.15);color:var(--accent3);}
+  .ub-load{background:rgba(59,130,246,0.15);color:var(--accent);}
+  .upd-inp{width:108px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Mono';font-size:12px;padding:5px 8px;outline:none;}
+  .upd-inp:focus{border-color:var(--accent);}
+  .upd-cur{font-size:10px;color:var(--text3);min-width:26px;}
+  .semaforo{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
+  .sg{background:#10b981;box-shadow:0 0 5px #10b981;} .sy{background:#f59e0b;box-shadow:0 0 5px #f59e0b;} .sr{background:#ef4444;box-shadow:0 0 5px #ef4444;}
+  .rent-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+  .rent-box{background:var(--bg3);border-radius:7px;padding:8px;text-align:center;}
+  .rent-box .period{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+  .rent-box .pct{font-family:'DM Mono';font-size:13px;font-weight:500;}
+  .hist-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(30,45,69,0.5);}
+  .hist-item:last-child{border-bottom:none;}
+  .hdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .al-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(30,45,69,0.4);font-size:12px;}
+  .al-row:last-child{border-bottom:none;}
+  .tab-content{display:none;} .tab-content.active{display:block;}
+  @media(max-width:900px){.charts-grid{grid-template-columns:1fr;}.main{padding:14px;}.header{padding:12px 14px;flex-wrap:wrap;gap:10px;}.summary-grid{grid-template-columns:1fr 1fr;}.rent-grid{grid-template-columns:repeat(3,1fr);}#individualCharts{grid-template-columns:1fr!important;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">Mi <span>Cartera</span></div>
+    <div class="header-date" id="hDate"></div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-success" onclick="startHybridUpdate()">↻ Actualizar precios</button>
+    <button class="btn btn-primary" onclick="openModal('add-fund')">＋ Añadir activo</button>
+    <button class="btn btn-ghost" onclick="exportData()">⬇ Exportar</button>
+    <button class="btn btn-ghost" onclick="importData()">⬆ Importar</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('resumen',this)">Resumen</div>
+  <div class="tab" onclick="showTab('fondos',this)">Fondos</div>
+  <div class="tab" onclick="showTab('acciones',this)">Acciones</div>
+  <div class="tab" onclick="showTab('graficos',this)">Gráficos</div>
+  <div class="tab" onclick="showTab('historial',this)">Historial</div>
+  <div class="tab" onclick="showTab('alertas',this)">Alertas</div>
+</div>
+
+<div class="main">
+
+<div id="tab-resumen" class="tab-content active">
+  <div class="upd-panel">
+    <div class="upd-status">
+      <div class="ust">Actualización híbrida de precios</div>
+      <div class="usd" id="lastUpdateLabel">Última actualización: —</div>
+      <div class="pbar"><div class="pfill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <button class="btn btn-success" onclick="startHybridUpdate()">↻ Actualizar ahora</button>
+    <button class="btn btn-ghost btn-sm" onclick="showHelp()">ℹ Ayuda</button>
+  </div>
+  <div class="summary-grid" id="summaryCards"></div>
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Distribución de cartera</div><div class="chart-wrap"><canvas id="chartPie"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Rentabilidad anual por activo</div><div class="chart-wrap"><canvas id="chartBench"></canvas></div></div>
+    <div class="chart-card full"><div class="chart-title">Evolución valor total de cartera</div><div class="chart-wrap"><canvas id="chartTotal"></canvas></div></div>
+  </div>
+</div>
+
+<div id="tab-fondos" class="tab-content">
+  <div class="section-title">Fondos de Inversión <span class="pill" id="fondosCount"></span></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Fondo</th><th>Partic.</th><th>V.Liquid.</th><th>Valor €</th><th>Diaria</th><th>Semanal</th><th>Mensual</th><th>Trim.</th><th>Anual</th><th></th></tr></thead>
+    <tbody id="fondosTable"></tbody>
+  </table></div>
+</div>
+
+<div id="tab-acciones" class="tab-content">
+  <div class="section-title">Acciones & ETFs <span class="pill" id="accionesCount"></span></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Activo</th><th>Acciones</th><th>Precio</th><th>Valor €</th><th>Diaria</th><th>Semanal</th><th>Mensual</th><th>Trim.</th><th>Anual</th><th></th></tr></thead>
+    <tbody id="accionesTable"></tbody>
+  </table></div>
+</div>
+
+<div id="tab-graficos" class="tab-content">
+  <div class="section-title">Evolución individual</div>
+  <div id="individualCharts" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;"></div>
+</div>
+
+<div id="tab-historial" class="tab-content">
+  <div class="section-title">Historial de operaciones</div>
+  <div class="table-wrap" id="historialList"></div>
+</div>
+
+<div id="tab-alertas" class="tab-content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="section-title" style="margin:0">Alertas de precio</div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('add-alert')">＋ Nueva alerta</button>
+  </div>
+  <div class="table-wrap" id="alertasList"></div>
+</div>
+
+</div>
+
+<!-- MODAL ACTUALIZACIÓN HÍBRIDA -->
+<div class="overlay" id="overlay-update">
+  <div class="modal" style="max-width:600px">
+    <h3>↻ Actualizar precios</h3>
+    <p class="msub" id="updateSubtitle">Buscando precios automáticamente…</p>
+    <div id="updateFields" style="max-height:400px;overflow-y:auto;padding-right:4px;"></div>
+    <div id="updateSummary" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.6;"></div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-update')">Cancelar</button>
+      <button class="btn btn-success" id="saveUpdateBtn" onclick="saveUpdatedPrices()" disabled>Guardar precios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AÑADIR ACTIVO -->
+<div class="overlay" id="overlay-add-fund">
+  <div class="modal">
+    <h3>Añadir activo</h3><p class="msub">Fondo, acción o ETF</p>
+    <div class="fg"><label>Tipo</label><select id="nf-type"><option value="fondo">Fondo de inversión</option><option value="accion">Acción / ETF</option></select></div>
+    <div class="fg"><label>Nombre completo</label><input type="text" id="nf-name" placeholder="Nombre del activo"></div>
+    <div class="fg"><label>ISIN</label><input type="text" id="nf-isin" placeholder="ES0123456789 / LU0123456789"></div>
+    <div class="fg"><label>Ticker Yahoo Finance (acciones/ETFs)</label><input type="text" id="nf-ticker" placeholder="SAN.MC / LDO.MI / CSPX.L"></div>
+    <div class="frow">
+      <div class="fg"><label>Participaciones / acciones</label><input type="number" id="nf-shares" placeholder="0.00" step="0.0001"></div>
+      <div class="fg"><label>Precio actual</label><input type="number" id="nf-price" placeholder="0.00" step="0.0001"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Moneda</label><select id="nf-currency"><option value="EUR">EUR €</option><option value="USD">USD $</option></select></div>
+      <div class="fg"><label>Mercado</label><select id="nf-market"><option value="ES">España</option><option value="US">USA</option><option value="EU">Europa</option><option value="GLOBAL">Global</option></select></div>
+    </div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-add-fund')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addAsset()">Añadir activo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMPRA/VENTA -->
+<div class="overlay" id="overlay-trade">
+  <div class="modal">
+    <h3 id="tradeTitle"></h3><p class="msub" id="tradeSub"></p>
+    <div class="frow">
+      <div class="fg"><label>Participaciones</label><input type="number" id="t-shares" placeholder="0.00" step="0.0001"></div>
+      <div class="fg"><label>Precio unitario</label><input type="number" id="t-price" placeholder="0.00" step="0.0001"></div>
+    </div>
+    <div class="fg"><label>Fecha</label><input type="date" id="t-date"></div>
+    <div class="fg"><label>Nota (opcional)</label><input type="text" id="t-note" placeholder="Descripción de la operación"></div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-trade')">Cancelar</button>
+      <button class="btn btn-primary" id="tradeBtn" onclick="executeTrade()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALERTA -->
+<div class="overlay" id="overlay-add-alert">
+  <div class="modal">
+    <h3>Nueva alerta</h3><p class="msub">Aviso cuando el precio cruce el umbral</p>
+    <div class="fg"><label>Activo</label>
+      <select id="al-asset" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono';font-size:12px;padding:9px 12px;outline:none;"></select>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Tipo</label><select id="al-type"><option value="above">Sube sobre</option><option value="below">Baja de</option></select></div>
+      <div class="fg"><label>Valor umbral</label><input type="number" id="al-value" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-add-alert')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addAlert()">Crear alerta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHART INDIVIDUAL -->
+<div class="overlay" id="overlay-chart">
+  <div class="modal" style="max-width:680px">
+    <h3 id="chartModalTitle"></h3><p class="msub" id="chartModalSub"></p>
+    <div style="height:280px;margin-bottom:16px"><canvas id="chartModal"></canvas></div>
+    <div class="rent-grid" id="chartRentGrid"></div>
+    <div class="mactions" style="margin-top:16px"><button class="btn btn-ghost" onclick="closeModal('overlay-chart')">Cerrar</button></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const INITIAL = {
+  lastUpdate:null, assets:[
+    {id:'f1',type:'fondo',name:'Caixabank Comunicación Mundial Estánd FI',isin:'ES0113693032',ticker:null,shares:1239.49,price:50.64,currency:'EUR',market:'ES',history:[],operations:[]},
+    {id:'f2',type:'fondo',name:'Franklin Gold & Prec Mtls A(acc) USD',isin:'LU0496367417',ticker:null,shares:1033.50,price:17.85,currency:'USD',market:'GLOBAL',history:[],operations:[]},
+    {id:'f3',type:'fondo',name:'UBS (Lux) Mny Mkt USD PREFERRED-acc',isin:'LU2498540348',ticker:null,shares:0.69,price:1183.21,currency:'USD',market:'GLOBAL',history:[],operations:[]},
+    {id:'f4',type:'fondo',name:'Santander GO Global Eq ESG BE EUR Acc',isin:'LU2134693980',ticker:null,shares:35.77,price:229.06,currency:'EUR',market:'GLOBAL',history:[],operations:[]},
+    {id:'f5',type:'fondo',name:'DoR Best Managers FI',isin:'ES0127002006',ticker:null,shares:1592.14,price:17.98,currency:'EUR',market:'ES',history:[],operations:[]},
+    {id:'f6',type:'fondo',name:'GDP World Equity FI',isin:'ES0132236003',ticker:null,shares:294.12,price:19.04,currency:'EUR',market:'ES',history:[],operations:[]},
+    {id:'f7',type:'fondo',name:'Allianz Global Artificial Intelligence AT EUR',isin:'LU1548497699',ticker:null,shares:16.60,price:318.52,currency:'EUR',market:'GLOBAL',history:[],operations:[]},
+    {id:'f8',type:'fondo',name:'EdRF Big Data A EUR',isin:'LU1244893696',ticker:null,shares:13.75,price:326.35,currency:'EUR',market:'GLOBAL',history:[],operations:[]},
+    {id:'f9',type:'fondo',name:'JPM Global Select Equity A (acc) EUR',isin:'LU0157178582',ticker:null,shares:181.97,price:249.02,currency:'EUR',market:'GLOBAL',history:[],operations:[]},
+    {id:'f10',type:'fondo',name:'Pictet - Global Megatrend Sel P EUR',isin:'LU0386882277',ticker:null,shares:40.22,price:354.18,currency:'EUR',market:'GLOBAL',history:[],operations:[]},
+    {id:'f11',type:'fondo',name:'Vanguard US 500 Stock Index Inv EUR Acc',isin:'IE0032620787',ticker:null,shares:10.75,price:67.23,currency:'EUR',market:'US',history:[],operations:[]},
+    {id:'f12',type:'fondo',name:'Pictet - Robotics P USD',isin:'LU1279333675',ticker:null,shares:23.17,price:439.85,currency:'USD',market:'GLOBAL',history:[],operations:[]},
+    {id:'f13',type:'fondo',name:'Fidelity Funds - Global Technology Fund A-DIST-EUR',isin:'LU0099574567',ticker:null,shares:63.64,price:78.34,currency:'EUR',market:'GLOBAL',history:[],operations:[]},
+    {id:'f14',type:'fondo',name:'Cobas Internacional D FI',isin:'ES0119199018',ticker:null,shares:44.05,price:281.96,currency:'EUR',market:'ES',history:[],operations:[]},
+    {id:'a1',type:'accion',name:'Banco Santander S.A.',isin:'ES0113900J37',ticker:'SAN.MC',shares:851,price:4.6733,currency:'EUR',market:'ES',history:[],operations:[]},
+    {id:'a2',type:'accion',name:'Leonardo S.p.A.',isin:'IT0003856405',ticker:'LDO.MI',shares:0.68,price:60.00,currency:'EUR',market:'EU',history:[],operations:[]},
+    {id:'a3',type:'accion',name:'iShares Core S&P 500 ETF',isin:'IE00B5BMR087',ticker:'CSPX.L',shares:6,price:703.62,currency:'USD',market:'US',history:[],operations:[]},
+  ], alerts:[], history:[]
+};
+
+let S = JSON.parse(localStorage.getItem('cartera_v3')||'null') || JSON.parse(JSON.stringify(INITIAL));
+S.assets.forEach(a=>{
+  if(!a.history) a.history=[];
+  if(!a.operations) a.operations=[];
+  if(!('ticker' in a)) a.ticker=null;
+  if(a.history.length===0) a.history.push({date:td(),price:a.price});
+});
+if(!S.alerts) S.alerts=[];
+if(!S.history) S.history=[];
+save();
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function td(){ return new Date().toISOString().split('T')[0]; }
+function save(){ localStorage.setItem('cartera_v3',JSON.stringify(S)); }
+function n(v,d=2){ if(v==null||isNaN(v)) return '—'; return new Intl.NumberFormat('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d}).format(v); }
+function nc(v,c='EUR'){ if(v==null||isNaN(v)) return '—'; return (c==='USD'?'$':'€')+n(v); }
+function pb(v){
+  if(v==null||isNaN(v)) return '<span class="badge neu">—</span>';
+  const cl=v>0?'pos':v<0?'neg':'neu', ar=v>0?'▲':v<0?'▼':'';
+  return `<span class="badge ${cl}">${ar} ${n(Math.abs(v))}%</span>`;
+}
+function sem(r){ if(r==null||isNaN(r)) return '<span class="semaforo sy"></span>'; if(r>=0) return '<span class="semaforo sg"></span>'; if(r>=-5) return '<span class="semaforo sy"></span>'; return '<span class="semaforo sr"></span>'; }
+function rent(a,days){
+  if(!a.history||a.history.length<2) return null;
+  const s=[...a.history].sort((x,y)=>x.date.localeCompare(y.date));
+  const now=s[s.length-1]; const cut=new Date(); cut.setDate(cut.getDate()-days);
+  const cs=cut.toISOString().split('T')[0];
+  const old=s.filter(h=>h.date<=cs).pop()||s[0];
+  if(!old||old.price===0) return null;
+  return ((now.price-old.price)/old.price)*100;
+}
+function val(a){ return a.shares*a.price; }
+function total(){ return S.assets.reduce((s,a)=>s+val(a),0); }
+function avgR(days){ const r=S.assets.map(a=>rent(a,days)).filter(x=>x!=null); return r.length?r.reduce((s,x)=>s+x,0)/r.length:null; }
+
+let C={pie:null,bench:null,tot:null,modal:null};
+
+// ── HYBRID UPDATE ─────────────────────────────────────────────────────────────
+async function yahooPrice(ticker){
+  // Try multiple proxies in sequence
+  const proxies = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  ];
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d&includePrePost=false`;
+  for(const makeProxy of proxies){
+    try{
+      const r=await fetch(makeProxy(url),{signal:AbortSignal.timeout(10000)});
+      if(!r.ok) continue;
+      const text=await r.text();
+      const p=JSON.parse(text);
+      const m=p?.chart?.result?.[0]?.meta;
+      if(m&&(m.regularMarketPrice||m.previousClose)) return m.regularMarketPrice||m.previousClose;
+    }catch{}
+  }
+  // Fallback: Yahoo Finance v7 quote endpoint
+  try{
+    const url2=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(ticker)}`;
+    const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(url2)}`,{signal:AbortSignal.timeout(10000)});
+    if(r.ok){
+      const text=await r.text(); const p=JSON.parse(text);
+      const q=p?.quoteResponse?.result?.[0];
+      if(q) return q.regularMarketPrice||q.ask||null;
+    }
+  }catch{}
+  return null;
+}
+
+async function morningstarPrice(isin){
+  // Try corsproxy.io for Morningstar search
+  try{
+    const su=`https://www.morningstar.es/es/util/SecuritySearch.ashx?q=${isin}&limit=1&universe=FOESP%7C%7CFOEUR%7C%7CFOGBR%7C%7CFOUSA`;
+    const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(su)}`,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok) return null;
+    const text=await r.text(); const res=JSON.parse(text);
+    if(!res||!res.length) return null;
+    const id=res[0].i;
+    const pr=await fetch(`https://corsproxy.io/?${encodeURIComponent('https://www.morningstar.es/es/funds/snapshot/snapshot.aspx?id='+id)}`,{signal:AbortSignal.timeout(10000)});
+    if(!pr.ok) return null;
+    const html=await pr.text();
+    const m=html.match(/id="[^"]*lastPrice[^"]*"[^>]*>([\d.,]+)/i)||
+              html.match(/class="[^"]*price[^"]*"[^>]*>\s*([\d.,]+)/i)||
+              html.match(/Valor liquidativo[^<]*<[^>]+>\s*([\d.,]+)/i);
+    if(!m) return null;
+    const v=parseFloat(m[1].replace(/\./g,'').replace(',','.'));
+    return isNaN(v)?null:v;
+  }catch{return null;}
+}
+
+let updRes={};
+
+async function startHybridUpdate(){
+  updRes={};
+  const fields=document.getElementById('updateFields');
+  document.getElementById('updateSubtitle').textContent='Buscando precios automáticamente…';
+  document.getElementById('updateSummary').style.display='none';
+  document.getElementById('saveUpdateBtn').disabled=true;
+  document.getElementById('progressFill').style.width='0%';
+
+  fields.innerHTML=S.assets.map(a=>`
+    <div class="upd-row" id="row-${a.id}">
+      <div class="upd-name">${a.name.length>42?a.name.substring(0,40)+'…':a.name}
+        <br><span style="color:var(--text3);font-size:9px">${a.ticker?'Ticker: '+a.ticker:'ISIN: '+a.isin}</span>
+      </div>
+      <span class="upd-badge ub-load" id="st-${a.id}">⏳</span>
+      <input class="upd-inp" type="number" id="upd-${a.id}" value="${a.price}" step="0.0001">
+      <span class="upd-cur">${a.currency}</span>
+    </div>`).join('');
+
+  openModal('update');
+  const tot=S.assets.length; let done=0;
+
+  await Promise.all(S.assets.map(async a=>{
+    let price=null, source=null;
+    if(a.ticker){ price=await yahooPrice(a.ticker); if(price) source='Yahoo Finance'; }
+    if(!price&&a.isin){ price=await morningstarPrice(a.isin); if(price) source='Morningstar'; }
+    done++;
+    document.getElementById('progressFill').style.width=Math.round(done/tot*100)+'%';
+    const stEl=document.getElementById('st-'+a.id);
+    const inEl=document.getElementById('upd-'+a.id);
+    if(price&&price>0){
+      updRes[a.id]={price,source,status:'auto'};
+      stEl.className='upd-badge ub-ok'; stEl.textContent='✓ '+source;
+      inEl.value=price; inEl.style.borderColor='var(--accent2)';
+    } else {
+      updRes[a.id]={price:a.price,source:'manual',status:'manual'};
+      stEl.className='upd-badge ub-fail'; stEl.textContent='✏ Manual';
+      inEl.style.borderColor='var(--accent3)'; inEl.style.background='rgba(245,158,11,0.06)';
+    }
+  }));
+
+  const autoC=Object.values(updRes).filter(r=>r.status==='auto').length;
+  const manC=tot-autoC;
+  document.getElementById('updateSubtitle').textContent=`${autoC} automáticos · ${manC} requieren revisión manual`;
+  const sum=document.getElementById('updateSummary');
+  sum.style.display='block';
+  sum.innerHTML=`<strong style="color:var(--accent2)">✓ ${autoC} precios</strong> obtenidos automáticamente · <strong style="color:var(--accent3)">✏ ${manC} fondos</strong> introducir manualmente<br><span style="font-size:11px;color:var(--text3)">Revisa y corrige los valores en naranja antes de guardar</span>`;
+  document.getElementById('saveUpdateBtn').disabled=false;
+  document.getElementById('progressFill').style.width='100%';
+}
+
+function saveUpdatedPrices(){
+  const t=td();
+  S.assets.forEach(a=>{
+    const inp=document.getElementById('upd-'+a.id); if(!inp) return;
+    const np=parseFloat(inp.value);
+    if(!isNaN(np)&&np>0){
+      const last=a.history[a.history.length-1];
+      if(!last||last.date!==t) a.history.push({date:t,price:np}); else last.price=np;
+      if(np!==a.price) S.history.push({type:'price',name:a.name.substring(0,35),date:t,price:np,source:updRes[a.id]?.source||'manual'});
+      a.price=np;
+    }
+  });
+  S.lastUpdate=new Date().toLocaleString('es-ES');
+  save(); closeModal('overlay-update'); renderAll();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(name,el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active'); el.classList.add('active');
+  if(name==='graficos') renderIndividualCharts();
+  if(name==='historial') renderHistorial();
+  if(name==='alertas') renderAlertas();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderAll(){ updateHeader(); renderSummary(); renderFondos(); renderAcciones(); renderCharts(); checkAlerts(); }
+
+function updateHeader(){
+  document.getElementById('hDate').textContent=new Date().toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
+  if(S.lastUpdate) document.getElementById('lastUpdateLabel').textContent='Última actualización: '+S.lastUpdate;
+}
+
+function renderSummary(){
+  const tot=total();
+  const fT=S.assets.filter(a=>a.type==='fondo').reduce((s,a)=>s+val(a),0);
+  const aT=S.assets.filter(a=>a.type==='accion').reduce((s,a)=>s+val(a),0);
+  document.getElementById('summaryCards').innerHTML=`
+    <div class="summary-card" style="--ac:#3b82f6"><div class="label">Valor total cartera</div><div class="value">${n(tot)}€</div><div class="sub">${S.assets.length} posiciones</div></div>
+    <div class="summary-card" style="--ac:#10b981"><div class="label">Fondos de inversión</div><div class="value">${n(fT)}€</div><div class="sub">${S.assets.filter(a=>a.type==='fondo').length} fondos · ${n(fT/tot*100)}%</div></div>
+    <div class="summary-card" style="--ac:#f59e0b"><div class="label">Acciones & ETFs</div><div class="value">${n(aT)}€</div><div class="sub">${S.assets.filter(a=>a.type==='accion').length} valores · ${n(aT/tot*100)}%</div></div>
+    <div class="summary-card" style="--ac:${avgR(1)>=0?'#10b981':'#ef4444'}"><div class="label">Rentabilidad media cartera</div>
+      <div class="value" style="font-size:20px">${avgR(1)!=null?n(avgR(1))+'%':'—'} <span style="font-size:12px;color:var(--text3)">diaria</span></div>
+      <div class="sub">${pb(avgR(30))} mensual &nbsp;${pb(avgR(365))} anual</div></div>`;
+}
+
+function renderTable(assets,id){
+  document.getElementById(id).innerHTML=assets.map(a=>{
+    const v=val(a);
+    return `<tr>
+      <td><div class="fund-name">${sem(rent(a,1))}${a.name}</div><div class="fund-meta">${a.isin||''} · ${a.currency} · ${a.market}${a.ticker?' · '+a.ticker:''}</div></td>
+      <td class="mono">${n(a.shares,a.type==='accion'?0:4)}</td>
+      <td class="mono">${nc(a.price,a.currency)}</td>
+      <td class="mono" style="font-weight:600">${n(v)}€</td>
+      <td>${pb(rent(a,1))}</td><td>${pb(rent(a,7))}</td><td>${pb(rent(a,30))}</td><td>${pb(rent(a,90))}</td><td>${pb(rent(a,365))}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-success btn-sm" onclick="openTrade('${a.id}','buy')">＋</button>
+        <button class="btn btn-danger btn-sm" onclick="openTrade('${a.id}','sell')">−</button>
+        <button class="btn btn-ghost btn-sm" onclick="openChartModal('${a.id}')">📈</button>
+      </div></td></tr>`;
+  }).join('');
+}
+
+function renderFondos(){ const f=S.assets.filter(a=>a.type==='fondo'); document.getElementById('fondosCount').textContent=f.length+' fondos'; renderTable(f,'fondosTable'); }
+function renderAcciones(){ const a=S.assets.filter(a=>a.type==='accion'); document.getElementById('accionesCount').textContent=a.length+' valores'; renderTable(a,'accionesTable'); }
+
+function renderCharts(){
+  const tot=total();
+  const lbl=S.assets.map(a=>a.name.length>28?a.name.substring(0,26)+'…':a.name);
+  const clr=S.assets.map((_,i)=>`hsl(${i*360/S.assets.length},60%,55%)`);
+  if(C.pie) C.pie.destroy();
+  C.pie=new Chart(document.getElementById('chartPie'),{type:'doughnut',data:{labels:lbl,datasets:[{data:S.assets.map(a=>val(a)),backgroundColor:clr,borderWidth:1,borderColor:'#111827'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{family:'DM Mono',size:9},boxWidth:10,padding:6}}}}});
+  const rA=S.assets.map(a=>rent(a,365)??0);
+  if(C.bench) C.bench.destroy();
+  C.bench=new Chart(document.getElementById('chartBench'),{type:'bar',data:{labels:lbl,datasets:[{label:'Rent. Anual %',data:rA,backgroundColor:rA.map(v=>v>=0?'rgba(16,185,129,0.7)':'rgba(239,68,68,0.7)'),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}},scales:{x:{ticks:{color:'#64748b',font:{size:8}},grid:{color:'#1e2d45'}},y:{ticks:{color:'#64748b',font:{family:'DM Mono',size:9}},grid:{color:'#1e2d45'}}}}});
+  const dates=[...new Set(S.assets.flatMap(a=>a.history.map(h=>h.date)))].sort();
+  const tots=dates.map(date=>S.assets.reduce((sum,a)=>{const e=[...a.history].filter(h=>h.date<=date).pop(); return sum+(e?a.shares*e.price:a.shares*a.price);},0));
+  if(C.tot) C.tot.destroy();
+  C.tot=new Chart(document.getElementById('chartTotal'),{type:'line',data:{labels:dates.length?dates:[td()],datasets:[{label:'Valor total (€)',data:tots.length?tots:[tot],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'DM Mono',size:11}}}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e2d45'}},y:{ticks:{color:'#64748b',font:{family:'DM Mono',size:10},callback:v=>'€'+n(v,0)},grid:{color:'#1e2d45'}}}}});
+}
+
+function renderIndividualCharts(){
+  const c=document.getElementById('individualCharts'); c.innerHTML='';
+  S.assets.forEach((a,i)=>{
+    const div=document.createElement('div'); div.className='chart-card';
+    const cid='ic-'+a.id;
+    div.innerHTML=`<div class="chart-title">${a.name.length>38?a.name.substring(0,36)+'…':a.name}</div><div class="chart-wrap"><canvas id="${cid}"></canvas></div>`;
+    c.appendChild(div);
+    setTimeout(()=>{
+      const s=[...a.history].sort((x,y)=>x.date.localeCompare(y.date));
+      new Chart(document.getElementById(cid),{type:'line',data:{labels:s.map(h=>h.date),datasets:[{label:'Precio',data:s.map(h=>h.price),borderColor:`hsl(${i*25},65%,55%)`,backgroundColor:`hsla(${i*25},65%,55%,0.1)`,fill:true,tension:0.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}},scales:{x:{ticks:{color:'#64748b',font:{size:8}},grid:{color:'#1e2d45'}},y:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e2d45'}}}}});
+    },50);
+  });
+}
+
+function renderHistorial(){
+  const all=S.history.slice().reverse().slice(0,60);
+  document.getElementById('historialList').innerHTML=all.length===0
+    ?'<div style="padding:24px;color:var(--text3);text-align:center">Sin operaciones registradas todavía</div>'
+    :all.map(h=>`<div class="hist-item">
+      <div class="hdot" style="background:${h.type==='buy'?'#10b981':h.type==='sell'?'#ef4444':'#3b82f6'}"></div>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500">${h.name} · <strong>${h.type==='buy'?'COMPRA':h.type==='sell'?'VENTA':'PRECIO'}</strong>${h.source&&h.source!=='manual'?' <span style="font-size:9px;color:var(--accent2)">· '+h.source+'</span>':''}</div>
+      <div style="font-size:10px;color:var(--text3)">${h.date}${h.note?' · '+h.note:''}</div></div>
+      <div class="mono ${h.type==='buy'?'pos':h.type==='sell'?'neg':'neu'}">${h.type==='price'?n(h.price):n(h.shares)+' @ '+n(h.price)}</div>
+    </div>`).join('');
+}
+
+function renderAlertas(){
+  document.getElementById('al-asset').innerHTML=S.assets.map(a=>`<option value="${a.id}">${a.name.substring(0,44)}</option>`).join('');
+  document.getElementById('alertasList').innerHTML=S.alerts.length===0
+    ?'<div style="padding:24px;color:var(--text3);text-align:center">Sin alertas configuradas</div>'
+    :S.alerts.map((al,i)=>{
+      const a=S.assets.find(x=>x.id===al.assetId); if(!a) return '';
+      const tr=al.type==='above'?a.price>=al.value:a.price<=al.value;
+      return `<div class="al-row"><span class="semaforo ${tr?'sr':'sg'}"></span>
+        <span style="flex:1"><strong>${a.name.substring(0,36)}</strong><br><span style="color:var(--text3);font-size:10px">${al.type==='above'?'Sube sobre':'Baja de'} ${n(al.value)} ${a.currency}</span></span>
+        <span class="badge ${tr?'neg':'neu'}" style="margin-right:10px">${tr?'⚠ ACTIVADA':'En espera'}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeAlert(${i})">✕</button></div>`;
+    }).join('');
+}
+
+function checkAlerts(){
+  S.alerts.forEach(al=>{
+    const a=S.assets.find(x=>x.id===al.assetId); if(!a) return;
+    const tr=al.type==='above'?a.price>=al.value:a.price<=al.value;
+    if(tr&&!al.notified){ al.notified=true; setTimeout(()=>alert(`⚠️ ALERTA\n${a.name}\n${al.type==='above'?'Superado':'Bajado de'} ${n(al.value)} ${a.currency}\nPrecio actual: ${n(a.price)}`),600); }
+    if(!tr) al.notified=false;
+  }); save();
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function openModal(id){ document.getElementById('overlay-'+id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+let _tid=null,_ttype=null;
+function openTrade(id,type){
+  _tid=id; _ttype=type;
+  const a=S.assets.find(x=>x.id===id);
+  document.getElementById('tradeTitle').textContent=type==='buy'?'＋ Compra':'− Venta';
+  document.getElementById('tradeSub').textContent=a.name;
+  document.getElementById('tradeBtn').textContent=type==='buy'?'Confirmar compra':'Confirmar venta';
+  document.getElementById('tradeBtn').className='btn '+(type==='buy'?'btn-success':'btn-danger');
+  document.getElementById('t-price').value=a.price;
+  document.getElementById('t-date').value=td();
+  document.getElementById('t-shares').value=''; document.getElementById('t-note').value='';
+  openModal('trade');
+}
+
+function executeTrade(){
+  const a=S.assets.find(x=>x.id===_tid);
+  const sh=parseFloat(document.getElementById('t-shares').value);
+  const pr=parseFloat(document.getElementById('t-price').value);
+  const dt=document.getElementById('t-date').value;
+  const nt=document.getElementById('t-note').value;
+  if(!sh||sh<=0||!pr||pr<=0){alert('Introduce participaciones y precio válidos');return;}
+  if(_ttype==='sell'&&sh>a.shares){alert('No tienes suficientes participaciones');return;}
+  if(_ttype==='buy') a.shares+=sh; else a.shares-=sh;
+  a.price=pr;
+  const last=a.history[a.history.length-1];
+  if(!last||last.date!==dt) a.history.push({date:dt,price:pr}); else last.price=pr;
+  S.history.push({type:_ttype,name:a.name.substring(0,35),date:dt,shares:sh,price:pr,note:nt});
+  S.lastUpdate=new Date().toLocaleString('es-ES');
+  save(); closeModal('overlay-trade'); renderAll();
+}
+
+function addAsset(){
+  const name=document.getElementById('nf-name').value.trim();
+  const type=document.getElementById('nf-type').value;
+  const isin=document.getElementById('nf-isin').value.trim();
+  const ticker=document.getElementById('nf-ticker').value.trim()||null;
+  const shares=parseFloat(document.getElementById('nf-shares').value);
+  const price=parseFloat(document.getElementById('nf-price').value);
+  const currency=document.getElementById('nf-currency').value;
+  const market=document.getElementById('nf-market').value;
+  if(!name||isNaN(shares)||isNaN(price)){alert('Rellena al menos nombre, participaciones y precio');return;}
+  S.assets.push({id:type[0]+Date.now(),type,name,isin,ticker,shares,price,currency,market,history:[{date:td(),price}],operations:[]});
+  S.history.push({type:'buy',name:name.substring(0,35),date:td(),shares,price,note:'Posición inicial'});
+  save(); closeModal('overlay-add-fund'); renderAll();
+  ['nf-name','nf-isin','nf-ticker','nf-shares','nf-price'].forEach(id=>document.getElementById(id).value='');
+}
+
+function addAlert(){
+  const assetId=document.getElementById('al-asset').value;
+  const type=document.getElementById('al-type').value;
+  const value=parseFloat(document.getElementById('al-value').value);
+  if(!assetId||isNaN(value)){alert('Selecciona activo y valor umbral');return;}
+  S.alerts.push({assetId,type,value,notified:false});
+  save(); closeModal('overlay-add-alert'); renderAlertas();
+}
+
+function removeAlert(i){ if(!confirm('¿Eliminar esta alerta?')) return; S.alerts.splice(i,1); save(); renderAlertas(); }
+
+function openChartModal(id){
+  const a=S.assets.find(x=>x.id===id);
+  document.getElementById('chartModalTitle').textContent=a.name;
+  document.getElementById('chartModalSub').textContent=`${a.currency} · ${n(a.shares,4)} partic. · Valor: ${n(val(a))}€`;
+  const s=[...a.history].sort((x,y)=>x.date.localeCompare(y.date));
+  if(C.modal) C.modal.destroy();
+  C.modal=new Chart(document.getElementById('chartModal'),{type:'line',data:{labels:s.map(h=>h.date),datasets:[{label:'Precio',data:s.map(h=>h.price),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8'}}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e2d45'}},y:{ticks:{color:'#64748b',font:{family:'DM Mono',size:10}},grid:{color:'#1e2d45'}}}}});
+  document.getElementById('chartRentGrid').innerHTML=[['Diaria',1],['Semanal',7],['Mensual',30],['Trimestral',90],['Anual',365]].map(([l,d])=>{
+    const r=rent(a,d); return `<div class="rent-box"><div class="period">${l}</div><div class="pct ${r==null?'neu':r>=0?'pos':'neg'}">${r!=null?n(r)+'%':'—'}</div></div>`;
+  }).join('');
+  openModal('chart');
+}
+
+function showHelp(){
+  alert('↻ Actualización Híbrida\n\n✓ AUTOMÁTICO (verde)\nLa app busca el precio en:\n• Yahoo Finance para acciones con ticker (SAN.MC, LDO.MI, CSPX.L)\n• Morningstar para fondos por ISIN\n\n✏ MANUAL (naranja)\nSi la API no responde, el campo queda editable. Consulta el valor liquidativo en:\n• Portal de tu banco o gestora\n• es.morningstar.com\n• cnmv.es (fondos españoles)\n\nℹ Los fondos publican NAV con 1-2 días de retraso. Es normal.');
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+function exportData(){
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b); const a=document.createElement('a');
+  a.href=u; a.download='cartera_'+td()+'.json'; a.click(); URL.revokeObjectURL(u);
+}
+function importData(){ document.getElementById('importFile').click(); }
+function handleImport(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.assets) throw new Error('Formato inválido');
+      if(confirm('¿Importar? Se reemplazará la cartera actual.')){ S=d; save(); renderAll(); alert('✅ Importado correctamente'); }
+    }catch(err){alert('Error: '+err.message);}
+  }; r.readAsText(f); e.target.value='';
+}
+
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+renderAll();
+</script>
+</body>
+</html>
